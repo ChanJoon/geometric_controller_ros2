@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,23 +36,18 @@
  *
  * Geometric controller ROS Node Implementation
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #include "geometric_controller/geometric_controller.h"
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "geometric_controller");
-  ros::NodeHandle nh("");
-  ros::NodeHandle nh_private("~");
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<geometricCtrl>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
 
-  geometricCtrl* geometricController = new geometricCtrl(nh, nh_private);
-
-  dynamic_reconfigure::Server<geometric_controller::GeometricControllerConfig> srv;
-  dynamic_reconfigure::Server<geometric_controller::GeometricControllerConfig>::CallbackType f;
-  f = boost::bind(&geometricCtrl::dynamicReconfigureCallback, geometricController, _1, _2);
-  srv.setCallback(f);
-
-  ros::spin();
   return 0;
 }

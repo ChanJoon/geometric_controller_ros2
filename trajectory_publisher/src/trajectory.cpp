@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +34,9 @@
 /**
  * @brief Trajectory Base Class
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #include "trajectory_publisher/trajectory.h"

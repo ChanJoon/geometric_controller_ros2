@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +34,18 @@
 /**
  * @brief Trajectory Publisher ROS Node
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #include "trajectory_publisher/trajectoryPublisher.h"
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "trajectory_publisher");
-  ros::NodeHandle nh("");
-  ros::NodeHandle nh_private("~");
-  trajectoryPublisher referencePublisher(nh, nh_private);
-  ros::spin();
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<trajectoryPublisher>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  
   return 0;
 }

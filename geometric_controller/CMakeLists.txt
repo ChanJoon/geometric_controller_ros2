@@ -1,36 +1,47 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.8)
 project(geometric_controller)
 
-add_definitions(-std=c++11)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  rospy
-  dynamic_reconfigure
-  tf
-  mavros
-  mavros_extras
-  mavros_msgs
-  mavlink
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "-std=c++14 -O3")
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(controller_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+find_package(px4_msgs REQUIRED)
+find_package(px4_ros_com REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+set(Dependencies
+  rclcpp
+  std_srvs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  geometry_msgs
+  nav_msgs
+  sensor_msgs
+  controller_msgs
+  trajectory_msgs
+  px4_msgs
+  px4_ros_com
 )
 
-generate_dynamic_reconfigure_options(
-  cfg/GeometricController.cfg
-)
-
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES geometric_controller
-  CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs sensor_msgs tf
-)
-
-#############
-# LIBRARIES #
-#############
 include_directories(
   include
   ${Boost_INCLUDE_DIR}
-  ${catkin_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
 )
 
@@ -40,8 +51,7 @@ add_library(${PROJECT_NAME}
   src/nonlinear_geometric_control.cpp
   src/jerk_tracking_control.cpp
 )
-add_dependencies(geometric_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+ament_target_dependencies(${PROJECT_NAME} ${Dependencies})
 
 ############
 # BINARIES #
@@ -49,27 +59,19 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(geometric_controller_node
   src/geometric_controller_node.cpp
 )
-add_dependencies(geometric_controller_node geometric_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(geometric_controller_node ${PROJECT_NAME} ${catkin_LIBRARIES})
+ament_target_dependencies(geometric_controller_node ${Dependencies})
+target_link_libraries(geometric_controller_node ${PROJECT_NAME})
 ##########
 # EXPORT #
 ##########
-# cs_install()
-# cs_export()
-#############
-## Testing ##
-#############
+install(TARGETS ${PROJECT_NAME} geometric_controller_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
+)
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
-if(CATKIN_ENABLE_TESTING)
-    # Add gtest based cpp test target and link libraries
-    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
-                                          test/test_example.cpp
-                                          test/geometric_controller-test.cpp)
-
-    if(TARGET ${PROJECT_NAME}-test)
-        target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
-                                                 ${catkin_LIBRARIES}
-                                                 ${YAML_CPP_LIBRARIES})
-    endif()
-
-endif()
+ament_package()

@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +34,9 @@
 /**
  * @brief Polynomial Trajectory
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #include "trajectory_publisher/polynomialtrajectory.h"
@@ -153,26 +156,27 @@ Eigen::Vector3d polynomialtrajectory::getAcceleration(double time) {
   return acceleration;
 }
 
-nav_msgs::Path polynomialtrajectory::getSegment() {
+nav_msgs::msg::Path polynomialtrajectory::getSegment(const rclcpp::Clock::SharedPtr& clock) {
   Eigen::Vector3d targetPosition;
   Eigen::Vector4d targetOrientation;
-  nav_msgs::Path segment;
+  nav_msgs::msg::Path segment;
 
   targetOrientation << 1.0, 0.0, 0.0, 0.0;
-  geometry_msgs::PoseStamped targetPoseStamped;
+  geometry_msgs::msg::PoseStamped targetPoseStamped;
 
   for (double t = 0; t < this->getDuration(); t += this->getsamplingTime()) {
     targetPosition = this->getPosition(t);
-    targetPoseStamped = vector3d2PoseStampedMsg(targetPosition, targetOrientation);
+    targetPoseStamped = vector3d2PoseStampedMsg(targetPosition, targetOrientation, clock);
     segment.poses.push_back(targetPoseStamped);
   }
   return segment;
 }
 
-geometry_msgs::PoseStamped polynomialtrajectory::vector3d2PoseStampedMsg(Eigen::Vector3d position,
-                                                                         Eigen::Vector4d orientation) {
-  geometry_msgs::PoseStamped encode_msg;
-  encode_msg.header.stamp = ros::Time::now();
+geometry_msgs::msg::PoseStamped polynomialtrajectory::vector3d2PoseStampedMsg(Eigen::Vector3d position,
+                                                                              Eigen::Vector4d orientation,
+                                                                              const rclcpp::Clock::SharedPtr& clock) {
+  geometry_msgs::msg::PoseStamped encode_msg;
+  encode_msg.header.stamp = clock->now();
   encode_msg.header.frame_id = "map";
   encode_msg.pose.orientation.w = orientation(0);
   encode_msg.pose.orientation.x = orientation(1);

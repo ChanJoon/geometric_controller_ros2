@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +34,9 @@
 /**
  * @brief Trajectory Publisher
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #ifndef TRAJECTORYPUBLISHER_H
@@ -45,49 +48,47 @@
 #include <sstream>
 #include <string>
 
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <mavconn/mavlink_dialect.h>
-#include <mavros_msgs/GlobalPositionTarget.h>
-#include <mavros_msgs/PositionTarget.h>
-#include <mavros_msgs/State.h>
-#include <nav_msgs/Path.h>
-#include <ros/ros.h>
-#include <std_msgs/Int32.h>
-#include <std_msgs/String.h>
-#include <std_srvs/SetBool.h>
-#include "controller_msgs/FlatTarget.h"
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <std_srvs/srv/set_bool.hpp>
+#include "controller_msgs/msg/flat_target.hpp"
 #include "trajectory_publisher/polynomialtrajectory.h"
 #include "trajectory_publisher/shapetrajectory.h"
 #include "trajectory_publisher/trajectory.h"
+#include "px4_msgs/msg/vehicle_status.hpp"
+#include "px4_msgs/msg/vehicle_local_position.hpp"
+#include <px4_ros_com/frame_transforms.h>
 
 #define REF_TWIST 8
-#define REF_SETPOINTRAW 16
+#define REF_HOVER 16
 
 using namespace std;
 using namespace Eigen;
-class trajectoryPublisher {
+class trajectoryPublisher : public rclcpp::Node{
  private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
-  ros::Publisher trajectoryPub_;
-  ros::Publisher referencePub_;
-  ros::Publisher flatreferencePub_;
-  ros::Publisher rawreferencePub_;
-  ros::Publisher global_rawreferencePub_;
-  std::vector<ros::Publisher> primitivePub_;
-  ros::Subscriber motionselectorSub_;
-  ros::Subscriber mavposeSub_;
-  ros::Subscriber mavtwistSub_;
-  ros::Subscriber mavstate_sub_;
-  ros::ServiceServer trajtriggerServ_;
-  ros::Timer trajloop_timer_;
-  ros::Timer refloop_timer_;
-  ros::Time start_time_, curr_time_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr trajectoryPub_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr referencePub_;
+  rclcpp::Publisher<controller_msgs::msg::FlatTarget>::SharedPtr flatreferencePub_;
+  std::vector<rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr> primitivePub_;
+  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr motionselectorSub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr mavposeSub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr mavstate_sub_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr trajtriggerServ_;
+  rclcpp::TimerBase::SharedPtr trajloop_timer_;
+  rclcpp::TimerBase::SharedPtr refloop_timer_;
+  rclcpp::Time start_time_, curr_time_;
+  rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10))
+                                    .reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT)
+                                    .durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
+                                    .history(RMW_QOS_POLICY_HISTORY_KEEP_LAST);                              
 
-  nav_msgs::Path refTrajectory_;
-  nav_msgs::Path primTrajectory_;
-  mavros_msgs::State current_state_;
+  nav_msgs::msg::Path refTrajectory_;
+  nav_msgs::msg::Path primTrajectory_;
+  px4_msgs::msg::VehicleStatus current_state_;
 
   int trajectory_type_;
   Eigen::Vector3d p_targ, v_targ, a_targ;
@@ -108,23 +109,23 @@ class trajectoryPublisher {
   std::vector<Eigen::Vector3d> inputs_;
 
  public:
-  trajectoryPublisher(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
+  trajectoryPublisher();
   void updateReference();
   void pubrefTrajectory(int selector);
   void pubprimitiveTrajectory();
   void pubrefState();
+  void pubrefhoverState();
   void pubflatrefState();
   void pubrefSetpointRaw();
   void pubrefSetpointRawGlobal();
   void initializePrimitives(int type);
   void updatePrimitives();
-  void loopCallback(const ros::TimerEvent& event);
-  void refCallback(const ros::TimerEvent& event);
-  bool triggerCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
-  void motionselectorCallback(const std_msgs::Int32& selector);
-  void mavposeCallback(const geometry_msgs::PoseStamped& msg);
-  void mavtwistCallback(const geometry_msgs::TwistStamped& msg);
-  void mavstateCallback(const mavros_msgs::State::ConstPtr& msg);
+  void loopCallback();
+  void refCallback();
+  bool triggerCallback(const std_srvs::srv::SetBool::Request::SharedPtr req, const std_srvs::srv::SetBool::Response::SharedPtr res);
+  void motionselectorCallback(const std_msgs::msg::Int32::SharedPtr selector);
+  void mavposeCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg);
+  void mavstateCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg);
 };
 
 #endif

@@ -1,0 +1,10 @@
+uint8 IGNORE_ROLL_RATE=1
+uint8 IGNORE_PITCH_RATE=2
+uint8 IGNORE_YAW_RATE=4
+uint8 IGNORE_THRUST=64
+uint8 IGNORE_ATTITUDE=128
+std_msgs/Header header
+uint8 type_mask
+geometry_msgs/Quaternion orientation
+geometry_msgs/Vector3 body_rate
+float32 thrust

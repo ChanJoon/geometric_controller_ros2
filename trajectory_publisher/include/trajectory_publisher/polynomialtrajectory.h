@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +34,9 @@
 /**
  * @brief Polynomial Trajectory
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #ifndef TRAJECTORY_PUBLISHER_POLYNOMIALTRAJECTORY_H
@@ -64,8 +67,8 @@ class polynomialtrajectory : public trajectory {
   Eigen::Vector3d getAcceleration(double time);
   double getsamplingTime() { return dt_; };
   double getDuration() { return T_; };
-  nav_msgs::Path getSegment();
-  geometry_msgs::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d position, Eigen::Vector4d orientation);
+  nav_msgs::msg::Path getSegment(const rclcpp::Clock::SharedPtr& clock);
+  geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d position, Eigen::Vector4d orientation, const rclcpp::Clock::SharedPtr& clock);
 };
 
 #endif  // TRAJECTORY_PUBLISHER_POLYNOMIALTRAJECTORY_H

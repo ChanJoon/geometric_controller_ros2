@@ -1,18 +1,23 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.8)
 project(controller_msgs)
 
-find_package(catkin REQUIRED COMPONENTS geometry_msgs sensor_msgs message_generation std_msgs)
+find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/AttitudeTarget.msg"
+  "msg/FlatTarget.msg"
+  "msg/PositionTarget.msg"
+  "msg/State.msg"
+  "srv/CommandBool.srv"
+  "srv/SetMode.srv"
+  DEPENDENCIES geometry_msgs sensor_msgs std_msgs
+)
 
 include_directories(include)
 
-add_message_files(
-  DIRECTORY msg
-  FILES
-  FlatTarget.msg
-)
-
-generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)
-
-catkin_package(
-  INCLUDE_DIRS include
-  CATKIN_DEPENDS geometry_msgs sensor_msgs message_runtime std_msgs)
+ament_export_dependencies(geometry_msgs sensor_msgs std_msgs)
+ament_package()

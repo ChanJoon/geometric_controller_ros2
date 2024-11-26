@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,14 +34,17 @@
 /**
  * @brief Trajectory Base Class
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #ifndef TRAJECTORY_PUBLISHER_TRAJECTORY_H
 #define TRAJECTORY_PUBLISHER_TRAJECTORY_H
 
-#include <geometry_msgs/PoseStamped.h>
-#include <nav_msgs/Path.h>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <Eigen/Dense>
 
 class trajectory {
@@ -69,8 +73,8 @@ class trajectory {
   virtual Eigen::Vector3d getAcceleration(double time) = 0;
   virtual double getsamplingTime() { return dt_; };
   virtual double getDuration() { return T_; };
-  virtual nav_msgs::Path getSegment() = 0;
-  virtual geometry_msgs::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d position, Eigen::Vector4d orientation) = 0;
+  virtual nav_msgs::msg::Path getSegment(const rclcpp::Clock::SharedPtr& clock) = 0;
+  virtual geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d position, Eigen::Vector4d orientation, const rclcpp::Clock::SharedPtr& clock) = 0;
 };
 
 #endif  // TRAJECTORY_PUBLISHER_TRAJECTORY_H

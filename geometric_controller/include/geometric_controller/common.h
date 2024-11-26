@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2021 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,15 +36,17 @@
  *
  * Common library for geometric controller
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 #include <Eigen/Dense>
 
 static Eigen::Matrix3d matrix_hat(const Eigen::Vector3d &v) {
@@ -60,12 +63,12 @@ static Eigen::Vector3d matrix_hat_inv(const Eigen::Matrix3d &m) {
   return v;
 }
 
-inline Eigen::Vector3d toEigen(const geometry_msgs::Point &p) {
+inline Eigen::Vector3d toEigen(const geometry_msgs::msg::Point &p) {
   Eigen::Vector3d ev3(p.x, p.y, p.z);
   return ev3;
 }
 
-inline Eigen::Vector3d toEigen(const geometry_msgs::Vector3 &v3) {
+inline Eigen::Vector3d toEigen(const geometry_msgs::msg::Vector3 &v3) {
   Eigen::Vector3d ev3(v3.x, v3.y, v3.z);
   return ev3;
 }

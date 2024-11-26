@@ -1,5 +1,6 @@
 /****************************************************************************
  *
+ *   Copyright (c) 2024 Chanjoon Park. All rights reserved.
  *   Copyright (c) 2018-2022 Jaeyoung Lim. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,40 +36,44 @@
  *
  * Geometric controller
  *
- * @author Jaeyoung Lim <jalim@ethz.ch>
+ * @author
+ * - Jaeyoung Lim <jalim@ethz.ch>
+ * - Chanjoon Park <chanjoon.park@kaist.ac.kr>
  */
 
 #ifndef GEOMETRIC_CONTROLLER_H
 #define GEOMETRIC_CONTROLLER_H
 
-#include <ros/ros.h>
-#include <ros/subscribe_options.h>
-#include <tf/transform_broadcaster.h>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <stdio.h>
 #include <cstdlib>
 #include <sstream>
 #include <string>
 
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/TwistStamped.h>
-#include <mavros_msgs/AttitudeTarget.h>
-#include <mavros_msgs/CommandBool.h>
-#include <mavros_msgs/CompanionProcessStatus.h>
-#include <mavros_msgs/SetMode.h>
-#include <mavros_msgs/State.h>
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
-#include <std_msgs/Float32.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <std_msgs/msg/float32.hpp>
 #include <Eigen/Dense>
 
-#include <controller_msgs/FlatTarget.h>
-#include <dynamic_reconfigure/server.h>
-#include <geometric_controller/GeometricControllerConfig.h>
-#include <std_srvs/SetBool.h>
-#include <trajectory_msgs/MultiDOFJointTrajectory.h>
-#include <trajectory_msgs/MultiDOFJointTrajectoryPoint.h>
+#include <controller_msgs/msg/flat_target.hpp>
+#include <std_srvs/srv/set_bool.hpp>
+#include <trajectory_msgs/msg/multi_dof_joint_trajectory.hpp>
+#include <trajectory_msgs/msg/multi_dof_joint_trajectory_point.hpp>
+#include <px4_msgs/msg/vehicle_command.hpp>
+#include <px4_msgs/msg/vehicle_rates_setpoint.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
+#include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_attitude.hpp>
+#include <px4_msgs/msg/trajectory_setpoint.hpp>
+#include <px4_msgs/msg/offboard_control_mode.hpp>
+#include <px4_ros_com/frame_transforms.h>
 
 #include "geometric_controller/common.h"
 #include "geometric_controller/control.h"
@@ -91,27 +96,30 @@ enum class MAV_STATE {
   MAV_STATE_FLIGHT_TERMINATION,
 };
 
-class geometricCtrl {
+class geometricCtrl : public rclcpp::Node {
  private:
-  ros::NodeHandle nh_;
-  ros::NodeHandle nh_private_;
-  ros::Subscriber referenceSub_;
-  ros::Subscriber flatreferenceSub_;
-  ros::Subscriber multiDOFJointSub_;
-  ros::Subscriber mavstateSub_;
-  ros::Subscriber mavposeSub_, gzmavposeSub_;
-  ros::Subscriber mavtwistSub_;
-  ros::Subscriber yawreferenceSub_;
-  ros::Publisher rotorVelPub_, angularVelPub_, target_pose_pub_;
-  ros::Publisher referencePosePub_;
-  ros::Publisher posehistoryPub_;
-  ros::Publisher systemstatusPub_;
-  ros::ServiceClient arming_client_;
-  ros::ServiceClient set_mode_client_;
-  ros::ServiceServer ctrltriggerServ_;
-  ros::ServiceServer land_service_;
-  ros::Timer cmdloop_timer_, statusloop_timer_;
-  ros::Time last_request_, reference_request_now_, reference_request_last_;
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr referenceSub_;
+  rclcpp::Subscription<controller_msgs::msg::FlatTarget>::SharedPtr flatreferenceSub_;
+  rclcpp::Subscription<trajectory_msgs::msg::MultiDOFJointTrajectory>::SharedPtr multiDOFJointSub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr mavstateSub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr mavodomSub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr mavposSub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleAttitude>::SharedPtr mavattSub_;
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr yawreferenceSub_;
+  rclcpp::Publisher<px4_msgs::msg::VehicleRatesSetpoint>::SharedPtr angularVelPub_;
+  rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr target_pose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr referencePosePub_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr posehistoryPub_;
+  rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr vehicle_command_pub_;
+  rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr offb_ctrl_mode_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr currentPosePub_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr land_service_;
+  rclcpp::TimerBase::SharedPtr cmdloop_timer_, statusloop_timer_;
+  rclcpp::Time last_request_, reference_request_now_, reference_request_last_;
+  rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10))
+                                    .reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT)
+                                    .durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
+                                    .history(RMW_QOS_POLICY_HISTORY_KEEP_LAST);
 
   string mav_name_;
   bool fail_detec_{false};
@@ -126,9 +134,9 @@ class geometricCtrl {
   double norm_thrust_const_, norm_thrust_offset_;
   double max_fb_acc_;
 
-  mavros_msgs::State current_state_;
-  mavros_msgs::CommandBool arm_cmd_;
-  std::vector<geometry_msgs::PoseStamped> posehistory_vector_;
+  int nav_state_;
+  int arming_state_;
+  std::vector<geometry_msgs::msg::PoseStamped> posehistory_vector_;
   MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_ACTIVE;
 
   double initTargetPos_x_, initTargetPos_y_, initTargetPos_z_;
@@ -141,27 +149,27 @@ class geometricCtrl {
   Eigen::Vector3d Kpos_, Kvel_, D_;
   double Kpos_x_, Kpos_y_, Kpos_z_, Kvel_x_, Kvel_y_, Kvel_z_;
   int posehistory_window_;
+  int offb_counter_ = 0;
 
+  void arm();
+  void pubVehicleCommand(uint16_t command, float param1 = 0.0, float param2 = 0.0);
+  void pubOffbControlMode();
   void pubMotorCommands();
   void pubRateCommands(const Eigen::Vector4d &cmd, const Eigen::Vector4d &target_attitude);
   void pubReferencePose(const Eigen::Vector3d &target_position, const Eigen::Vector4d &target_attitude);
   void pubPoseHistory();
-  void pubSystemStatus();
   void appendPoseHistory();
-  void odomCallback(const nav_msgs::OdometryConstPtr &odomMsg);
-  void targetCallback(const geometry_msgs::TwistStamped &msg);
-  void flattargetCallback(const controller_msgs::FlatTarget &msg);
-  void yawtargetCallback(const std_msgs::Float32 &msg);
-  void multiDOFJointCallback(const trajectory_msgs::MultiDOFJointTrajectory &msg);
-  void keyboardCallback(const geometry_msgs::Twist &msg);
-  void cmdloopCallback(const ros::TimerEvent &event);
-  void mavstateCallback(const mavros_msgs::State::ConstPtr &msg);
-  void mavposeCallback(const geometry_msgs::PoseStamped &msg);
-  void mavtwistCallback(const geometry_msgs::TwistStamped &msg);
-  void statusloopCallback(const ros::TimerEvent &event);
-  bool ctrltriggerCallback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
-  bool landCallback(std_srvs::SetBool::Request &request, std_srvs::SetBool::Response &response);
-  geometry_msgs::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d &position, Eigen::Vector4d &orientation);
+  void targetCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
+  void flattargetCallback(const controller_msgs::msg::FlatTarget::SharedPtr msg);
+  void yawtargetCallback(const std_msgs::msg::Float32::SharedPtr msg);
+  void multiDOFJointCallback(const trajectory_msgs::msg::MultiDOFJointTrajectory::SharedPtr msg);
+  void cmdloopCallback();
+  void mavstateCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg);
+  void mavodomCallback(const px4_msgs::msg::VehicleOdometry::SharedPtr msg);
+  void mavposeCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg);
+  void mavattCallback(const px4_msgs::msg::VehicleAttitude::SharedPtr msg);
+  bool landCallback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+  geometry_msgs::msg::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d &position, Eigen::Vector4d &orientation);
   void computeBodyRateCmd(Eigen::Vector4d &bodyrate_cmd, const Eigen::Vector3d &target_acc);
   Eigen::Vector3d controlPosition(const Eigen::Vector3d &target_pos, const Eigen::Vector3d &target_vel,
                                   const Eigen::Vector3d &target_acc);
@@ -170,23 +178,12 @@ class geometricCtrl {
                                 Eigen::Vector4d &curr_att);
 
   enum FlightState { WAITING_FOR_HOME_POSE, MISSION_EXECUTION, LANDING, LANDED } node_state;
-
-  template <class T>
-  void waitForPredicate(const T *pred, const std::string &msg, double hz = 2.0) {
-    ros::Rate pause(hz);
-    ROS_INFO_STREAM(msg);
-    while (ros::ok() && !(*pred)) {
-      ros::spinOnce();
-      pause.sleep();
-    }
-  };
-  geometry_msgs::Pose home_pose_;
-  bool received_home_pose;
+  geometry_msgs::msg::Pose home_pose_;
+  bool received_home_pose = false;
   std::shared_ptr<Control> controller_;
 
  public:
-  void dynamicReconfigureCallback(geometric_controller::GeometricControllerConfig &config, uint32_t level);
-  geometricCtrl(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
+  geometricCtrl();
   virtual ~geometricCtrl();
   void getStates(Eigen::Vector3d &pos, Eigen::Vector4d &att, Eigen::Vector3d &vel, Eigen::Vector3d &angvel) {
     pos = mavPos_;
