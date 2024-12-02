@@ -13,7 +13,7 @@ def generate_launch_description():
         DeclareLaunchArgument('trajectory_type', default_value='1'),
         DeclareLaunchArgument('shape_omega', default_value='1.2'),
         DeclareLaunchArgument('initpos_z', default_value='2.0'),
-        DeclareLaunchArgument('reference_type', default_value='2'), # 2 for ciecle, 16 for hover
+        DeclareLaunchArgument('reference_type', default_value='2'), # 2 for circle, 16 for hover
         DeclareLaunchArgument('enable_sim', default_value='true'),
         DeclareLaunchArgument('ctrl_mode', default_value='2'),
         DeclareLaunchArgument('visualization', default_value='true'),
@@ -25,7 +25,7 @@ def generate_launch_description():
             name='geometric_controller',
             output='screen',
             parameters=[{
-                # 'use_sim_time': True,
+                'use_sim_time': True,
                 'mav_name': LaunchConfiguration('mav_name'),
                 'ctrl_mode': LaunchConfiguration('ctrl_mode'),
                 'enable_sim': LaunchConfiguration('enable_sim'),
@@ -51,7 +51,7 @@ def generate_launch_description():
             name='trajectory_publisher',
             output='screen',
             parameters=[{
-                # 'use_sim_time': True,
+                'use_sim_time': True,
                 'trajectory_type': LaunchConfiguration('trajectory_type'),
                 'shape_omega': LaunchConfiguration('shape_omega'),
                 'initpos_z': LaunchConfiguration('initpos_z'),

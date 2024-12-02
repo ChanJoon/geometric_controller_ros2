@@ -308,9 +308,6 @@ void geometricCtrl::mavodomCallback(const px4_msgs::msg::VehicleOdometry::Shared
   Eigen::Quaterniond ned_att(msg->q[0], msg->q[1], msg->q[2], msg->q[3]);
   Eigen::Quaterniond enu_att = px4_ros_com::frame_transforms::px4_to_ros_orientation(ned_att);
   mavAtt_ << enu_att.w(), enu_att.x(), enu_att.y(), enu_att.z();
-
-
-  currentPosePub_->publish(vector3d2PoseStampedMsg(mavPos_, mavAtt_));
 }
 
 void geometricCtrl::mavposeCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
@@ -367,6 +364,7 @@ void geometricCtrl::cmdloopCallback() {
         pubRateCommands(cmdBodyRate_, q_des);
         appendPoseHistory();
         pubPoseHistory();
+        pubCurrentPose(mavPos_, mavAtt_);
       }
       break;
     }
@@ -390,8 +388,8 @@ void geometricCtrl::cmdloopCallback() {
 void geometricCtrl::mavstateCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
   nav_state_ = msg->nav_state;
   arming_state_ = msg->arming_state;
-  RCLCPP_INFO(this->get_logger(), "NavState: %d", nav_state_);
-  RCLCPP_INFO(this->get_logger(), "    - offboard status: %s", (nav_state_ == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_OFFBOARD) ? "true" : "false");
+  // RCLCPP_INFO(this->get_logger(), "NavState: %d", nav_state_);
+  // RCLCPP_INFO(this->get_logger(), "    - offboard status: %s", (nav_state_ == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_OFFBOARD) ? "true" : "false");
 }
 
 void geometricCtrl::pubReferencePose(const Eigen::Vector3d &target_position, const Eigen::Vector4d &target_attitude) {
@@ -449,6 +447,10 @@ void geometricCtrl::appendPoseHistory() {
   if (posehistory_vector_.size() > posehistory_window_) {
     posehistory_vector_.pop_back();
   }
+}
+
+void geometricCtrl::pubCurrentPose(Eigen::Vector3d &position, Eigen::Vector4d &orientation) {
+  currentPosePub_->publish(vector3d2PoseStampedMsg(position, orientation));
 }
 
 geometry_msgs::msg::PoseStamped geometricCtrl::vector3d2PoseStampedMsg(Eigen::Vector3d &position,

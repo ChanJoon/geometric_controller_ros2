@@ -209,7 +209,12 @@ void trajectoryPublisher::pubflatrefState() {
   flatreferencePub_->publish(msg);
 }
 
-void trajectoryPublisher::mavstateCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) { current_state_ = *msg; }
+void trajectoryPublisher::mavstateCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
+  current_state_ = *msg;
+  // RCLCPP_INFO(this->get_logger(), "NavState: %d", current_state_.nav_state);
+  // RCLCPP_INFO(this->get_logger(), "    - offboard status: %s", (current_state_.nav_state == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_OFFBOARD) ? "true" : "false");
+}
+
 
 void trajectoryPublisher::loopCallback() {
   // Slow Loop publishing trajectory information
@@ -250,8 +255,6 @@ void trajectoryPublisher::motionselectorCallback(const std_msgs::msg::Int32::Sha
 }
 
 void trajectoryPublisher::mavposeCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
-  // p_mav_ = px4_ros_com::frame_transforms::ned_to_enu_local_frame(Eigen::Vector3d(msg->x, msg->y, msg->z));
-  // v_mav_ = px4_ros_com::frame_transforms::ned_to_enu_local_frame(Eigen::Vector3d(msg->vx, msg->vy, msg->vz));
   p_mav_ << msg->x, -msg->y, -msg->z;
   v_mav_ << msg->vx, -msg->vy, -msg->vz;
 

@@ -159,6 +159,7 @@ class geometricCtrl : public rclcpp::Node {
   void pubReferencePose(const Eigen::Vector3d &target_position, const Eigen::Vector4d &target_attitude);
   void pubPoseHistory();
   void appendPoseHistory();
+  void pubCurrentPose(Eigen::Vector3d &position, Eigen::Vector4d &orientation);
   void targetCallback(const geometry_msgs::msg::TwistStamped::SharedPtr msg);
   void flattargetCallback(const controller_msgs::msg::FlatTarget::SharedPtr msg);
   void yawtargetCallback(const std_msgs::msg::Float32::SharedPtr msg);
