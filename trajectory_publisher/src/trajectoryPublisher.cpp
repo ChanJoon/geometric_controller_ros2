@@ -255,8 +255,8 @@ void trajectoryPublisher::motionselectorCallback(const std_msgs::msg::Int32::Sha
 }
 
 void trajectoryPublisher::mavposeCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
-  p_mav_ << msg->x, -msg->y, -msg->z;
-  v_mav_ << msg->vx, -msg->vy, -msg->vz;
+  p_mav_ << msg->x, msg->y, msg->z;
+  v_mav_ << msg->vx, msg->vy, msg->vz;
 
   updatePrimitives();
 }

@@ -315,20 +315,20 @@ void geometricCtrl::mavposeCallback(const px4_msgs::msg::VehicleLocalPosition::S
     received_home_pose = true;
     geometry_msgs::msg::Pose tmp_pose;
     tmp_pose.position.x = msg->x;
-    tmp_pose.position.y = -msg->y;
-    tmp_pose.position.z = -msg->z;
+    tmp_pose.position.y = msg->y;
+    tmp_pose.position.z = msg->z;
 
     home_pose_ = tmp_pose;
 
     RCLCPP_INFO(this->get_logger(), "Home pose initialized to: [x: %f, y: %f, z: %f]",
                 home_pose_.position.x, home_pose_.position.y, home_pose_.position.z);
   }
-  mavPos_ << msg->x, -msg->y, -msg->z;
-  mavVel_ << msg->vx, -msg->vy, -msg->vz;
+  mavPos_ << msg->x, msg->y, msg->z;
+  mavVel_ << msg->vx, msg->vy, msg->vz;
 }
 
 void geometricCtrl::mavattCallback(const px4_msgs::msg::VehicleAttitude::SharedPtr msg) {
-  Eigen::Quaterniond q(msg->q[0], msg->q[1], -msg->q[2], -msg->q[3]);
+  Eigen::Quaterniond q(msg->q[0], msg->q[1], msg->q[2], msg->q[3]);
   mavAtt_ << q.w(), q.x(), q.y(), q.z();
 }
 
